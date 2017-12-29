@@ -7,7 +7,7 @@ public class Point {
     private double x, y;
     private ArrayList<Integer> features;
     private Point nearest;
-    public boolean hasNearestNeighbour;
+    private int indexOfNearest;
 
     public Point(String[] input){
         features = new ArrayList<Integer>();
@@ -31,24 +31,24 @@ public class Point {
         return features;
     }
 
-    public void deriveDistanceFunction(ArrayList<Point> points){
+    public void deriveDistanceFunction(Point target, ArrayList<Point> points){
         ArrayList<Integer> distance = new ArrayList<>();
         for(int i=0; i<points.size(); i++){
             distance.add(calculateDistance(points.get(i)));
             //System.out.println("Distance vector: "+distance.get(i));
         }
 
-        int minIndex=-1, currentMin=Integer.MAX_VALUE;
+        int currentMin=Integer.MAX_VALUE;
         for (int i=0; i< distance.size(); i++){
             if(distance.get(i)<currentMin){
-                minIndex=i;
+                indexOfNearest=i;
                 currentMin=distance.get(i);
             }
         }
 
-        nearest= points.get(minIndex);
+        target.nearest= points.get(indexOfNearest);
 
-        System.out.println("Derived nearest neighbour of "+this.toString()+" : "+nearest.toString()+". Distance is "+distance.get(minIndex));
+        System.out.println("Derived nearest neighbour of "+this.toString()+" : "+target.nearest.toString()+". Distance is "+distance.get(indexOfNearest));
     }
 
     private int calculateDistance(Point point) {

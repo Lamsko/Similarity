@@ -23,8 +23,7 @@ public class GUI extends JFrame implements ActionListener{
     Dimension size = new Dimension(900,800);
     Dimension pictureSize = new Dimension(450,800);
     Dimension containerPanelSize = new Dimension(900,800);
-    JPanelImpl picture1Panel, picture2Panel;
-    JPanelContainer containerPanel;
+    JPanelImpl picture1Panel;
     Model picture1Model, picture2Model;
     JButton loadPicture1, loadPicture2, resolveButton;
     File
@@ -47,34 +46,21 @@ public class GUI extends JFrame implements ActionListener{
     }
 
     private void setUpComponents() {
-        containerPanel = new JPanelContainer();
-        containerPanel.setLayout(new MigLayout("gap 0, ins 0"));
-        containerPanel.setMinimumSize(containerPanelSize);
-        containerPanel.setPreferredSize(containerPanelSize);
-        containerPanel.setSize(containerPanelSize);
-        //containerPanel.setBorder(BorderFactory.createLineBorder(Color.MAGENTA, 2));
         loadPicture1 = new JButton("Wczytaj obrazek 1");
         loadPicture1.addActionListener(this);
         loadPicture2 = new JButton("Wczytaj obrazek 2");
         loadPicture2.addActionListener(this);
         picture1Panel = new JPanelImpl();
-        picture1Panel.setMinimumSize(pictureSize);
-        picture1Panel.setSize(pictureSize);
-        picture1Panel.setPreferredSize(pictureSize);
-        picture2Panel = new JPanelImpl();
-        picture2Panel.setMinimumSize(pictureSize);
-        picture2Panel.setSize(pictureSize);
-        picture2Panel.setPreferredSize(pictureSize);
+        picture1Panel.setMinimumSize(containerPanelSize);
+        picture1Panel.setSize(containerPanelSize);
+        picture1Panel.setPreferredSize(containerPanelSize);
         resolveButton = new JButton("Rozwiąż");
         resolveButton.addActionListener(this);
 
         add(loadPicture1);
         add(loadPicture2);
-        add(containerPanel, "span 2");
-        containerPanel.add(picture1Panel);
-        containerPanel.add(picture2Panel);
+        add(picture1Panel, "span 2, growx, growy");
         add(resolveButton, "span 2, growx");
-        //resolveButton.setEnabled(false);
         pack();
     }
 
@@ -98,18 +84,18 @@ public class GUI extends JFrame implements ActionListener{
                     System.out.println(picture1.getAbsoluteFile());
                     data1 = new File(picture1.getAbsoluteFile() + ".haraff.sift");
                     System.out.println("Also loaded data " + data1.getName());
-                    picture1Panel.setImage(picture1, haraffPicture1);
+                    picture1Panel.setImage1(picture1, haraffPicture1);
                     picture1Model = Parser.parse(data1);
-                    picture1Panel.setModel(picture1Model);
+                    picture1Panel.setModel1(picture1Model);
                 } else {
                     picture2 = fc.getSelectedFile();
                     haraffPicture2 = new File(picture2.getAbsoluteFile() + ".haraff.sift.png");
                     System.out.println(picture2.getAbsoluteFile());
                     data2 = new File(picture2.getAbsoluteFile() + ".haraff.sift");
                     System.out.println("Also loaded data " + data2.getName());
-                    picture2Panel.setImage(picture2, haraffPicture2);
+                    picture1Panel.setImage2(picture2, haraffPicture2);
                     picture2Model = Parser.parse(data2);
-                    picture2Panel.setModel(picture2Model);
+                    picture1Panel.setModel2(picture2Model);
                 }
             }
             repaint();
@@ -121,20 +107,20 @@ public class GUI extends JFrame implements ActionListener{
     }
 
     class JPanelImpl extends JPanel implements MouseListener{
-        private BufferedImage imageToDraw;
-        private BufferedImage originalImage, haraffImage;
-        private Model imageModel;
+        private BufferedImage imageToDraw1, imageToDraw2;
+        private BufferedImage originalImage1, haraffImage1, originalImage2, haraffImage2;
+        private Model imageModel1, imageModel2;
 
         public JPanelImpl(){
             super();
             addMouseListener(this);
         }
 
-        public void setImage(File original, File haraff){
+        public void setImage1(File original, File haraff){
             try {
-                originalImage = ImageIO.read(original);
-                haraffImage = ImageIO.read(haraff);
-                imageToDraw=originalImage;
+                originalImage1 = ImageIO.read(original);
+                haraffImage1 = ImageIO.read(haraff);
+                imageToDraw1 = originalImage1;
             }
             catch (IOException e){
                 System.out.println("Failed during reading the image");
@@ -142,21 +128,58 @@ public class GUI extends JFrame implements ActionListener{
             }
         }
 
-        public void setModel(Model model){
-            this.imageModel=model;
+        public void setImage2(File original, File haraff){
+            try {
+                originalImage2 = ImageIO.read(original);
+                haraffImage2 = ImageIO.read(haraff);
+                imageToDraw2 = originalImage2;
+            }
+            catch (IOException e){
+                System.out.println("Failed during reading the image");
+                e.printStackTrace();
+            }
+        }
+
+        public void setModel1(Model model){
+            this.imageModel1 =model;
+        }
+
+        public void setModel2(Model model){
+            this.imageModel2=model;
         }
 
         @Override
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
             Graphics2D g = (Graphics2D) graphics;
-            if(imageToDraw !=null){
-                g.drawImage(imageToDraw, 0,0, null);
+            if(imageToDraw1 !=null){
+                g.drawImage(imageToDraw1, 0,0, null);
             }
-            if(imageModel!=null){
+            if(imageToDraw2 !=null){
+                g.drawImage(imageToDraw2, 450,0, null);
+            }
+            if(imageModel1 !=null){
                 g.setColor(Color.RED);
-                for(Point p: imageModel.getPoints()){
+                for(Point p: imageModel1.getPoints()){
                     g.fillOval((int)p.getX(), (int)p.getY(), 4, 4);
+                }
+
+            }
+            if(imageModel2!=null){
+                for(Point p: imageModel2.getPoints()){
+                    g.fillOval((int)p.getX()+450, (int)p.getY(), 4, 4);
+                }
+            }
+
+            g.setColor(Color.GREEN);
+            if(imageModel1!=null&&imageModel2!=null) {
+                for (Point p : imageModel1.getPoints()) {
+                    if (p.hasNearestNeighbour()) {
+                        Point temp = p.getNearestNeighbour();
+                        if(temp.getNearestNeighbour().equals(p)) {
+                            g.drawLine((int) p.getX(), (int) p.getY(), (int) (450 + temp.getX()), (int) temp.getY());
+                        }
+                    }
                 }
             }
         }
@@ -176,39 +199,24 @@ public class GUI extends JFrame implements ActionListener{
 
         @Override
         public void mouseEntered(MouseEvent mouseEvent) {
-            imageToDraw=haraffImage;
+            imageToDraw1 = haraffImage1;
+            imageToDraw2 = haraffImage2;
             repaint();
         }
 
         @Override
         public void mouseExited(MouseEvent mouseEvent) {
-            imageToDraw=originalImage;
+            imageToDraw1 = originalImage1;
+            imageToDraw2 = originalImage2;
             repaint();
         }
     }
 
-    class JPanelContainer extends JPanel{
-        @Override
-        public void paintComponent(Graphics graphics) {
-            super.paintComponent(graphics);
-            Graphics2D g = (Graphics2D) graphics;
-            g.setColor(Color.RED);
-            g.fillOval(100,100, 50, 50);
-            System.out.println("Before paint");
-            if(picture1Model!=null && picture2Model!=null) {
-                System.out.println("In nearest neighbour");
-                for (Point p: picture1Model.getPoints()){
-                    if(p.hasNearestNeighbour()){
-                        g.setColor(Color.GREEN);
-                        Point near = p.getNearestNeighbour();
-                        g.drawLine((int)p.getX(), (int)p.getY(), (int)(pictureSize.width+near.getX()), (int)near.getY());
-                    }
-                }
-            }
-        }
-    }
-
     public void setNearestNeighbourData(Resolver r){
+        picture1Model=r.getModel1();
+        picture1Panel.setModel1(picture1Model);
+        picture2Model=r.getModel2();
+        picture1Panel.setModel2(picture2Model);
         repaint();
     }
 
