@@ -2,7 +2,7 @@ package model;
 
 import java.util.ArrayList;
 
-public class Point {
+public class Point{
     private final int ARRAY_SIZE=128;
     private double x, y;
     private ArrayList<Integer> features;

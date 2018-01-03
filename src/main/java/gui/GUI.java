@@ -4,7 +4,7 @@ import model.Model;
 import model.Point;
 import net.miginfocom.swing.MigLayout;
 import parser.Parser;
-import resolver.Resolver;
+import resolvers.NeighbouringPointsResolver;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -33,7 +33,7 @@ public class GUI extends JFrame implements ActionListener{
             data2 = new File("D:\\Kuba\\Google Drive\\Uczelnia\\Semestr 7\\SI i Inżynieria Wiedzy\\Laboratorium\\Zadanie 4\\Similarity\\src\\main\\resources\\kwiatek2.png.haraff.sift"),
             haraffPicture1 = new File("D:\\Kuba\\Google Drive\\Uczelnia\\Semestr 7\\SI i Inżynieria Wiedzy\\Laboratorium\\Zadanie 4\\Similarity\\src\\main\\resources\\kwiatek1.png.haraff.sift.png"),
             haraffPicture2 = new File("D:\\Kuba\\Google Drive\\Uczelnia\\Semestr 7\\SI i Inżynieria Wiedzy\\Laboratorium\\Zadanie 4\\Similarity\\src\\main\\resources\\kwiatek2.png.haraff.sift.png");
-    Resolver resolver;
+    NeighbouringPointsResolver neighbouringPointsResolver;
 
     public GUI(String title){
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -101,8 +101,8 @@ public class GUI extends JFrame implements ActionListener{
             repaint();
         }
         else if (actionEvent.getSource()==resolveButton){
-            resolver = new Resolver(picture1Model, picture2Model, this);
-            resolver.resolve();
+            neighbouringPointsResolver = new NeighbouringPointsResolver(picture1Model, picture2Model, this);
+            neighbouringPointsResolver.resolve();
         }
     }
 
@@ -182,6 +182,13 @@ public class GUI extends JFrame implements ActionListener{
                     }
                 }
             }
+
+            if(neighbouringPointsResolver !=null && neighbouringPointsResolver.getNeighboringPointCount()!=-1){
+                Font f = new Font("serif", Font.BOLD, 20);
+                g.setColor(Color.RED);
+                g.setFont(f);
+                g.drawString(("Ilość wzajemnych punktów kluczowych: "+ neighbouringPointsResolver.getNeighboringPointCount()), 10, 40);
+            }
         }
 
         @Override
@@ -212,7 +219,7 @@ public class GUI extends JFrame implements ActionListener{
         }
     }
 
-    public void setNearestNeighbourData(Resolver r){
+    public void setNearestNeighbourData(NeighbouringPointsResolver r){
         picture1Model=r.getModel1();
         picture1Panel.setModel1(picture1Model);
         picture2Model=r.getModel2();
