@@ -7,6 +7,7 @@ import parser.Parser;
 import resolvers.NeighbourIntegrityResolver;
 import resolvers.NeighbouringPointsResolver;
 import resolvers.RANSACLinearResolver;
+import resolvers.RANSACPerspectiveResolver;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -35,7 +36,10 @@ public class GUI extends JFrame implements ActionListener, ItemListener{
     JCheckBox
             showPointsCheckBox,
             showNeighboursCheckBox,
-            showCharactersisticPointsCheckBox;
+            showCharactersisticPointsCheckBox,
+            showIntegrityResults,
+            showLinearRANSACResults,
+            showPerspectiveRANSACResults;
     File
             picture1 = new File("D:\\Kuba\\Google Drive\\Uczelnia\\Semestr 7\\SI i Inżynieria Wiedzy\\Laboratorium\\Zadanie 4\\Similarity\\src\\main\\resources\\kwiatek1.png"),
             picture2 = new File("D:\\Kuba\\Google Drive\\Uczelnia\\Semestr 7\\SI i Inżynieria Wiedzy\\Laboratorium\\Zadanie 4\\Similarity\\src\\main\\resources\\kwiatek2.png"),
@@ -46,6 +50,7 @@ public class GUI extends JFrame implements ActionListener, ItemListener{
     NeighbouringPointsResolver neighbouringPointsResolver;
     NeighbourIntegrityResolver neighbourIntegrityResolver;
     RANSACLinearResolver ransacLinearResolver;
+    RANSACPerspectiveResolver ransacPerspectiveResolver;
 
     public GUI(String title){
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -87,6 +92,15 @@ public class GUI extends JFrame implements ActionListener, ItemListener{
         showCharactersisticPointsCheckBox = new JCheckBox("Rysuj elispy punktów kluczowych");
         showCharactersisticPointsCheckBox.addItemListener(this);
         showNeighboursCheckBox.setSelected(false);
+        showIntegrityResults = new JCheckBox("Rysuj spójność punktów kluczowych");
+        showIntegrityResults.setSelected(false);
+        showIntegrityResults.addItemListener(this);
+        showLinearRANSACResults = new JCheckBox("Rysuj wynik działania RANSAC dwuliniowy");
+        showLinearRANSACResults.setSelected(false);
+        showLinearRANSACResults.addItemListener(this);
+        showPerspectiveRANSACResults = new JCheckBox("Rysuj wynik działania RANSAC perspektywiczny");
+        showPerspectiveRANSACResults.setSelected(false);
+        showPerspectiveRANSACResults.addItemListener(this);
 
         add(loadPicture1);
         add(loadPicture2);
@@ -96,8 +110,11 @@ public class GUI extends JFrame implements ActionListener, ItemListener{
         add(resolveWithRANSACLinearButton, "span 2, growx");
         add(resolveWithRANSACPerspectiveButton, "span 2, growx");
         add(showCharactersisticPointsCheckBox);
-        add(showPointsCheckBox, "split 2");
+        add(showPointsCheckBox, "split 3");
         add(showNeighboursCheckBox);
+        add(showIntegrityResults);
+        add(showLinearRANSACResults);
+        add(showPerspectiveRANSACResults);
         pack();
     }
 
@@ -155,9 +172,12 @@ public class GUI extends JFrame implements ActionListener, ItemListener{
             System.out.println("Resolving with linear RANSAC");
             ransacLinearResolver = new RANSACLinearResolver(this,neighbouringPointsResolver.getPointsWithNeighbors());
             ArrayList<Point> RANSAC = ransacLinearResolver.resolve();
-            for (Point p: RANSAC){
-                System.out.println(p);
-            }
+            refresh();
+        }
+        else if (actionEvent.getSource()==resolveWithRANSACPerspectiveButton){
+            ransacPerspectiveResolver = new RANSACPerspectiveResolver(this, neighbouringPointsResolver.getPointsWithNeighbors());
+            ArrayList<Point> RANSAC = ransacPerspectiveResolver.resolve();
+            refresh();
         }
     }
 
@@ -251,13 +271,53 @@ public class GUI extends JFrame implements ActionListener, ItemListener{
                 g.drawString(("Ilość wzajemnych punktów kluczowych: "+ neighbouringPointsResolver.getNeighboringPointCount()), 10, 30);
             }
 
-            if(neighbourIntegrityResolver != null && neighbourIntegrityResolver.getNeighboringPointCount()!=0){
+            if(neighbourIntegrityResolver != null && neighbourIntegrityResolver.getNeighboringPointCount()!=0 && showIntegrityResults.isSelected()){
                 g.setColor(Color.CYAN);
                 System.out.println("Painiting points!");
                 g.drawString("Ilość znalezionych punktów spójnych: "+neighbourIntegrityResolver.getNeighboringPointCount(),10,50);
                 for (Point p: neighbourIntegrityResolver.getProduct()){
-                    Point temp = p.getNearestNeighbour();
-                    g.drawLine((int) p.getX(), (int) p.getY(), (int) (450 + temp.getX()), (int) temp.getY());
+                    if(imageModel1.getPoints().contains(p)) {
+                        Point temp = p.getNearestNeighbour();
+                        g.drawLine((int) p.getX(), (int) p.getY(), (int) (450 + temp.getX()), (int) temp.getY());
+                    }
+                    else{
+                        Point temp = p.getNearestNeighbour();
+                        g.drawLine((int) temp.getX(), (int) temp.getY(), (int) (450 + p.getX()), (int) p.getY());
+                    }
+                }
+            }
+
+            if(ransacLinearResolver != null && ransacLinearResolver.getProduct().size()!=0 && showLinearRANSACResults.isSelected()){
+                g.setColor(Color.MAGENTA);
+                System.out.println("Painiting points!");
+
+                for (Point p: ransacLinearResolver.getProduct()){
+                    if(imageModel1.getPoints().contains(p)) {
+                        Point temp = p.getNearestNeighbour();
+                        g.drawLine((int) p.getX(), (int) p.getY(), (int) (450 + temp.getX()), (int) temp.getY());
+                    }
+                    else{
+                        Point temp = p.getNearestNeighbour();
+                        g.drawLine((int) temp.getX(), (int) temp.getY(), (int) (450 + p.getX()), (int) p.getY());
+                    }
+                }
+                g.setColor(Color.MAGENTA);
+                g.drawString("Ilość znalezionych punktów metodą RANSAC Liniowy: "+ransacLinearResolver.getProduct().size(),10,70);
+            }
+
+            if(ransacPerspectiveResolver != null && ransacPerspectiveResolver.getProduct().size()!=0 && showPerspectiveRANSACResults.isSelected()){
+                g.setColor(Color.YELLOW);
+                System.out.println("Painiting points!");
+                g.drawString("Ilość znalezionych punktów metodą RANSAC Perspektywiczny: "+ransacPerspectiveResolver.getProduct().size(),10,90);
+                for (Point p: ransacPerspectiveResolver.getProduct()){
+                    if(imageModel1.getPoints().contains(p)) {
+                        Point temp = p.getNearestNeighbour();
+                        g.drawLine((int) p.getX(), (int) p.getY(), (int) (450 + temp.getX()), (int) temp.getY());
+                    }
+                    else{
+                        Point temp = p.getNearestNeighbour();
+                        g.drawLine((int) temp.getX(), (int) temp.getY(), (int) (450 + p.getX()), (int) p.getY());
+                    }
                 }
             }
         }

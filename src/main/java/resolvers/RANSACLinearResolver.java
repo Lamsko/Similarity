@@ -2,26 +2,81 @@ package resolvers;
 
 import Jama.Matrix;
 import gui.GUI;
+import javafx.util.Pair;
 import model.Point;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 
 public class RANSACLinearResolver {
-    private GUI gui;
-    private ArrayList<Point> points;
+    protected GUI gui;
+    protected ArrayList<Point> points, product;
+    protected ArrayList<Pair<Integer, Matrix>> models;
+    protected double MAX_ERROR = 0.1;
+    static final int ITERATIONS = 10;
 
     public RANSACLinearResolver(GUI gui, ArrayList<Point> input){
         this.gui=gui;
         this.points=input;
+        models = new ArrayList<>();
+        product = new ArrayList<>();
     }
 
-    public ArrayList<Point> resolve(){
-        ArrayList<Point> sample = generateSample();
-        Matrix product = calculateMatrix(sample);
-        product.print(10,5);
-        double error = checkError(product);
-        return sample;
+    public final ArrayList<Point> getProduct() {
+        return product;
+    }
+
+    public final ArrayList<Point> resolve(){
+        product.clear();
+        models.clear();
+        for (int i=0; i<ITERATIONS; i++) {
+            ArrayList<Point> sample = generateSample();
+            Matrix product = calculateMatrix(sample);
+            product.print(10, 5);
+            int error = checkError(product);
+            models.add(new Pair<Integer, Matrix>(error, product));
+        }
+
+        models.sort((t1, t2) -> {
+            if(t1.getKey()<t2.getKey()) return -1;
+            else if (t1.getKey().equals(t2.getKey())) return 0;
+            else return 1;
+        });
+
+        System.out.println("Best model found of error :"+models.get(0).getKey());
+        models.get(0).getValue().print(10,5);
+
+        return findPointsThatMeetRequirements(models.get(0).getValue());
+    }
+
+    protected ArrayList<Point> findPointsThatMeetRequirements(Matrix value) {
+        double[][] array = value.getArray();
+        double
+                a = array[0][0],
+                b = array[1][0],
+                c = array[2][0],
+                d = array[3][0],
+                e = array[4][0],
+                f = array[5][0],
+                g = array[6][0],
+                h = array[7][0];
+
+        for (Point p: points){
+            Point neighbour = p.getNearestNeighbour();
+
+            double xPrim = a*p.getX()+b*p.getY()+c*p.getX()*p.getY()+d;
+            double yPrim = e*p.getX()+f*p.getY()+g*p.getX()*p.getY()+h;
+
+            double total = Math.abs(xPrim-neighbour.getX())+Math.abs(yPrim-neighbour.getY());
+            total/=1E8;
+            if(total<=MAX_ERROR)
+                product.add(p);
+        }
+
+        gui.refresh();
+
+        return product;
     }
 
     private ArrayList<Point> generateSample(){
@@ -146,8 +201,8 @@ public class RANSACLinearResolver {
         return matA.solve(matB);
     }
 
-    protected double checkError(Matrix product){
-        double error=0;
+    protected int checkError(Matrix product){
+        int error=0;
 
         double[][] array = product.getArray();
 
@@ -169,9 +224,10 @@ public class RANSACLinearResolver {
             double yPrim = e*p.getX()+f*p.getY()+g*p.getX()*p.getY()+h;
 
             double total = Math.abs(xPrim-neighbour.getX())+Math.abs(yPrim-neighbour.getY());
-
+            total/=1.0E8;
             System.out.println("Error for point "+p+" and neighbour "+neighbour+" is "+total);
-            error+=total;
+            if(total>MAX_ERROR)
+                error++;
         }
         return error;
     }
