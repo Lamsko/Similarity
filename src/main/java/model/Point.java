@@ -2,12 +2,16 @@ package model;
 
 import java.util.ArrayList;
 
-public class Point{
+public class Point implements Cloneable{
     private final int ARRAY_SIZE=128;
     private double x, y;
     private ArrayList<Integer> features;
     private Point nearest;
     private int indexOfNearest;
+
+    private Point(){
+        features = new ArrayList<>();
+    }
 
     public Point(String[] input){
         features = new ArrayList<Integer>();
@@ -32,13 +36,12 @@ public class Point{
     }
 
     public void deriveDistanceFunction(Point target, ArrayList<Point> points){
-        ArrayList<Integer> distance = new ArrayList<>();
+        ArrayList<Double> distance = new ArrayList<>();
         for(int i=0; i<points.size(); i++){
             distance.add(calculateDistance(points.get(i)));
-            //System.out.println("Distance vector: "+distance.get(i));
         }
 
-        int currentMin=Integer.MAX_VALUE;
+        double currentMin=Double.MAX_VALUE;
         for (int i=0; i< distance.size(); i++){
             if(distance.get(i)<currentMin){
                 indexOfNearest=i;
@@ -51,8 +54,8 @@ public class Point{
         System.out.println("Derived nearest neighbour of "+this.toString()+" : "+target.nearest.toString()+". Distance is "+distance.get(indexOfNearest));
     }
 
-    private int calculateDistance(Point point) {
-        int sum = 0;
+    private double calculateDistance(Point point) {
+        double sum = 0;
         for (int i=0; i<features.size(); i++){
             sum+=Math.pow((features.get(i)-point.features.get(i)),2);
         }
@@ -67,7 +70,25 @@ public class Point{
         return nearest!=null;
     }
 
+    @Override
     public String toString(){
         return "Point x: "+x+", y: "+y;
+    }
+
+    @Override
+    public Point clone(){
+        Point clone = new Point();
+        clone.x=x;
+        clone.y=y;
+        clone.nearest=nearest.clone();
+        clone.indexOfNearest=indexOfNearest;
+        clone.features.addAll(features);
+        return clone;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        Point p = (Point) o;
+        return x==p.x&&y==p.y&&indexOfNearest==p.indexOfNearest;
     }
 }

@@ -5,6 +5,7 @@ import model.Model;
 import model.Point;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class NeighbouringPointsResolver {
     private Model model1, model2;
@@ -34,7 +35,18 @@ public class NeighbouringPointsResolver {
 
         for (int i=0; i<aPoints.size(); i++){
             if(aPoints.get(i).hasNearestNeighbour()){
-                pointsWithNeighbours.add(aPoints.get(i));
+                Point temp = aPoints.get(i).getNearestNeighbour();
+                if(temp.getNearestNeighbour().equals(aPoints.get(i))) {
+                    pointsWithNeighbours.add(aPoints.get(i));
+                }
+            }
+        }
+        for (int i=0; i<bPoints.size(); i++){
+            if(bPoints.get(i).hasNearestNeighbour()){
+                Point temp = bPoints.get(i).getNearestNeighbour();
+                if(temp.getNearestNeighbour().equals(bPoints.get(i))) {
+                    pointsWithNeighbours.add(bPoints.get(i));
+                }
             }
         }
 
@@ -47,11 +59,17 @@ public class NeighbouringPointsResolver {
         return pointsWithNeighbours.size()>0?pointsWithNeighbours.size():-1;
     }
 
+
+
     public Model getModel1() {
         return model1;
     }
 
     public Model getModel2() {
         return model2;
+    }
+
+    public ArrayList<Point> getPointsWithNeighbors() {
+        return pointsWithNeighbours;
     }
 }
